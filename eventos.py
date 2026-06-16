@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 
+# Clase calendario (para los festivos)
 class CalendarioLaboral:
 
     FESTIVOS_2026 = {
@@ -31,3 +32,24 @@ class CalendarioLaboral:
         while CalendarioLaboral.es_dia_no_laborable(fecha):
             fecha += timedelta(days=1)
         return fecha
+    
+
+# Clase planificadora de eventos recurrentes
+class PlanificadorEventos:
+
+    def __init__(self, fecha_inicio: date, intervalo_dias: int, num_eventos: int):
+        self.fecha_inicio = CalendarioLaboral.siguiente_dia_laborable(fecha_inicio)
+        self.intervalo_dias = intervalo_dias
+        self.num_eventos = num_eventos
+
+    def calcular_siguiente_valida(self, fecha_anterior: date) -> date:
+        fecha = fecha_anterior + timedelta(days=self.intervalo_dias)
+        return CalendarioLaboral.siguiente_dia_laborable(fecha)
+
+    def planificar(self):
+        print(f"--- Planificación de {self.num_eventos} eventos recurrentes (Intervalo: {self.intervalo_dias} días) ---")
+        fecha_actual = self.fecha_inicio
+        for evento in range(1, self.num_eventos + 1):
+            print(f"Evento {evento}: {fecha_actual}")
+            if evento < self.num_eventos:
+                fecha_actual = self.calcular_siguiente_valida(fecha_actual)
