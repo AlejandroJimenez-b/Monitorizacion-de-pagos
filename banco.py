@@ -21,6 +21,7 @@ class Prestamo:
         self.logger.info(f"--- Préstamo: {self.num_cuotas} cuotas cada {self.INTERVALO_DIAS} días ---")
         fecha_actual = self.fecha_inicio
         consecutivas_desplazadas = 0
+        calculo_cuotas = []
 
         for cuota in range(1, self.num_cuotas + 1):
             fecha_ideal = fecha_actual + timedelta(days=self.INTERVALO_DIAS) if cuota > 1 else fecha_actual
@@ -38,8 +39,12 @@ class Prestamo:
             if consecutivas_desplazadas >= 3:
                 self.logger.warning(f"Atención: {consecutivas_desplazadas} cuotas consecutivas fueron desplazadas.")
 
+            calculo_cuotas.append({"cuota": cuota, "fecha_prevista": fecha_actual})  # se crea UNA vez, con lo justo y necesario
+
             if cuota < self.num_cuotas:
                 fecha_actual = self.calcular_siguiente_valida(fecha_actual)
+
+        return calculo_cuotas
 
 # Comparacion de pagos reales
 
