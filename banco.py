@@ -60,15 +60,35 @@ class AnalizadorPagos:
         self.cuota_requerida = cuota_requerida
 
     def analizar(self):
+        resultados_de_cuota = []
         for plan, pago in zip(self.cuotas_planificadas, self.pagos_realizados):
+            resultado = {"cuota": plan['cuota']}  # se crea UNA vez por cuota
+
             if not pago["pagada"] or self.importe_cuota == 0:
                 self.logger.warning(f"Cuota {plan['cuota']}: IMPAGADA")
+                resultado["estado"] = "IMPAGADA"
+
             else:
                 dias_retraso = max(0, (pago["fecha_pago"] - plan["fecha_prevista"]).days)
+
                 if dias_retraso == 0:
                     self.logger.info(f"Cuota {plan['cuota']}: pagada a tiempo")
+                    resultado["estado"] = "PAGADA"
+                    resultado["dias_de_retraso"] = 0
+
                 else:
+                    resultado["estado"] = "PAGADA CON RETRASO"
+                    resultado["dias_de_retraso"] = dias_retraso
+
                     if self.importe_cuota < self.cuota_requerida:
                         self.logger.warning(f"Cuota {plan['cuota']}: INCOMPLETA. {self.cuota_requerida - self.importe_cuota} € POR ABONAR")
+                        resultado["incompleta"] = True
+                        resultado["faltante"] = self.cuota_requerida - self.importe_cuota
+
                     interes = round(dias_retraso * self.importe_cuota * (self.TARIFAS['interes_demora'] / 365), 2)
                     self.logger.warning(f"Cuota {plan['cuota']}: pagada con {dias_retraso} días de retraso. Recargo: {interes} €")
+                    resultado["recargo"] = interes
+
+            resultados_de_cuota.append(resultado)  # se añade UNA vez, fuera de los ifs
+
+        return resultados_de_cuota

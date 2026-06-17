@@ -45,7 +45,18 @@ class Notificaciones:
         except smtplib.SMTPException as e:
             self.logger.error(f"Error al enviar el email: {e}")
 
-    def notificar_cuota_vencida(self, cuota):
-        analizador_pagos = AnalizadorPagos().analizar()
+    def notificar_cuota_vencida(self, destinatario: str, num_cuota: int, dias_retraso: int, recargo: float):
 
-        pass # implementar esta tarde
+        asunto = f"Aviso: Cuota {num_cuota} vencida"
+
+        cuerpo = (
+        f"Estimado cliente,\n\n"
+        f"Le informamos que la cuota {num_cuota} de su préstamo "
+        f"ha sido pagada con {dias_retraso} días de retraso.\n"
+        f"Recargo aplicado: {recargo} €.\n\n"
+        f"Atentamente,\nSu banco."
+        )
+        
+        self.enviar_email(destinatario, asunto, cuerpo)     
+
+
