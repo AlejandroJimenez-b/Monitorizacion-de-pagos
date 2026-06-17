@@ -1,9 +1,12 @@
 from datetime import date, timedelta
 from eventos import CalendarioLaboral
+from logger import Logger
+
 
 # Calculo de cuotas
 class Prestamo:
 
+    logger = Logger().configurar_logging()
     INTERVALO_DIAS = 30
 
     def __init__(self, fecha_inicio: date, num_cuotas: int):
@@ -15,7 +18,7 @@ class Prestamo:
         return CalendarioLaboral.siguiente_dia_laborable(fecha)
 
     def calcular_cuotas(self):
-        print(f"--- Préstamo: {self.num_cuotas} cuotas cada {self.INTERVALO_DIAS} días ---")
+        self.logger.info(f"--- Préstamo: {self.num_cuotas} cuotas cada {self.INTERVALO_DIAS} días ---")
         fecha_actual = self.fecha_inicio
         consecutivas_desplazadas = 0
 
@@ -30,10 +33,10 @@ class Prestamo:
                 consecutivas_desplazadas = 0
                 detalle = "(fecha exacta)"
 
-            print(f"Cuota {cuota}: {fecha_actual}  {detalle}")
+            self.logger.info(f"Cuota {cuota}: {fecha_actual}  {detalle}")
 
             if consecutivas_desplazadas >= 3:
-                print(f"Atención: {consecutivas_desplazadas} cuotas consecutivas fueron desplazadas.")
+                self.logger.warning(f"Atención: {consecutivas_desplazadas} cuotas consecutivas fueron desplazadas.")
 
             if cuota < self.num_cuotas:
                 fecha_actual = self.calcular_siguiente_valida(fecha_actual)
@@ -41,6 +44,8 @@ class Prestamo:
 # Comparacion de pagos reales
 
 class AnalizadorPagos:
+
+    logger = Logger().configurar_logging()
 
     TARIFAS = {
         "interes_normal":  0.07,
@@ -57,13 +62,13 @@ class AnalizadorPagos:
     def analizar(self):
         for plan, pago in zip(self.cuotas_planificadas, self.pagos_realizados):
             if not pago["pagada"] or self.importe_cuota == 0:
-                print(f"Cuota {plan['cuota']}: IMPAGADA")
+                self.logger.warning(f"Cuota {plan['cuota']}: IMPAGADA")
             else:
                 dias_retraso = max(0, (pago["fecha_pago"] - plan["fecha_prevista"]).days)
                 if dias_retraso == 0:
-                    print(f"Cuota {plan['cuota']}: pagada a tiempo ✅")
+                    self.logger.info(f"Cuota {plan['cuota']}: pagada a tiempo")
                 else:
                     if self.importe_cuota < self.cuota_requerida:
-                        print(f"Cuota {plan['cuota']}: INCOMPLETA. {self.cuota_requerida - self.importe_cuota} € POR ABONAR")
+                        self.logger.warning(f"Cuota {plan['cuota']}: INCOMPLETA. {self.cuota_requerida - self.importe_cuota} € POR ABONAR")
                     interes = round(dias_retraso * self.importe_cuota * (self.TARIFAS['interes_demora'] / 365), 2)
-                    print(f"Cuota {plan['cuota']}: pagada con {dias_retraso} días de retraso. Recargo: {interes} €")
+                    self.logger.warning(f"Cuota {plan['cuota']}: pagada con {dias_retraso} días de retraso. Recargo: {interes} €")

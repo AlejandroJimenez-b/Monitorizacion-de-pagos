@@ -10,10 +10,16 @@ import smtplib
 import os
 from dotenv import load_dotenv
 from email.mime.text import MIMEText # Para construir el mensaje (el email)
+from logger import Logger
+from banco import AnalizadorPagos
+
 
 load_dotenv()  # lee el archivo .env y carga las variables(con las credenciales)
 
 class Notificaciones:
+
+    logger = Logger().configurar_logging()
+
 
     def __init__(self):
         self.remitente = os.getenv("GMAIL_USER")
@@ -33,8 +39,13 @@ class Notificaciones:
                 conexion.starttls()
                 conexion.login(self.remitente, self.password)
                 conexion.sendmail(self.remitente, destinatario, mensaje.as_string())
-                pass  # aquí irá el log de éxito
+                self.logger.info(f"Email enviado a {destinatario}")
         except smtplib.SMTPAuthenticationError:
-            pass  # aquí irá el log de error de credenciales
+            self.logger.error(f"Error: credenciales incorrectas. Revisa tu .env")
         except smtplib.SMTPException as e:
-            pass  # aquí irá el log de error genera
+            self.logger.error(f"Error al enviar el email: {e}")
+
+    def notificar_cuota_vencida(self, cuota):
+        analizador_pagos = AnalizadorPagos().analizar()
+
+        pass # implementar esta tarde

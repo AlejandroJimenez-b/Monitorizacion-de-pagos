@@ -1,8 +1,9 @@
 from datetime import date, timedelta
+from logger import Logger
 
 # Clase calendario (para los festivos)
 class CalendarioLaboral:
-
+    
     FESTIVOS_2026 = {
         date(2026, 1, 1),
         date(2026, 1, 6),
@@ -37,6 +38,8 @@ class CalendarioLaboral:
 # Clase planificadora de eventos recurrentes
 class PlanificadorEventos:
 
+    logger = Logger().configurar_logging()
+
     def __init__(self, fecha_inicio: date, intervalo_dias: int, num_eventos: int):
         self.fecha_inicio = CalendarioLaboral.siguiente_dia_laborable(fecha_inicio)
         self.intervalo_dias = intervalo_dias
@@ -47,9 +50,9 @@ class PlanificadorEventos:
         return CalendarioLaboral.siguiente_dia_laborable(fecha)
 
     def planificar(self):
-        print(f"--- Planificación de {self.num_eventos} eventos recurrentes (Intervalo: {self.intervalo_dias} días) ---")
+        self.logger.info(f"--- Planificación de {self.num_eventos} eventos recurrentes (Intervalo: {self.intervalo_dias} días) ---")
         fecha_actual = self.fecha_inicio
         for evento in range(1, self.num_eventos + 1):
-            print(f"Evento {evento}: {fecha_actual}")
+            self.logger.info(f"Evento {evento}: {fecha_actual}")
             if evento < self.num_eventos:
                 fecha_actual = self.calcular_siguiente_valida(fecha_actual)
