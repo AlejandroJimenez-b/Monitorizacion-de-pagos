@@ -1,62 +1,67 @@
-# Flujo del funcionamiento de este archivo: tu script Python → servidor SMTP de Gmail → bandeja del destinatario
-# Necesito:
-# Credenciales:  tu email y la contraseña de aplicación que vas a generar
-# El contenido — asunto, cuerpo del email, destinatario
-# La lógica — cuándo disparar el email (cuota impagada, retraso, etc.)
-
-# Librerias que necesito
-
 import smtplib
 import os
 from dotenv import load_dotenv
-from email.mime.text import MIMEText # Para construir el mensaje (el email)
+from email.mime.text import MIMEText
 from logger import Logger
-from banco import AnalizadorPagos
 
+load_dotenv()
 
-load_dotenv()  # lee el archivo .env y carga las variables(con las credenciales)
 
 class Notificaciones:
 
     logger = Logger().configurar_logging()
 
-
     def __init__(self):
         self.remitente = os.getenv("GMAIL_USER")
-        self.password  = os.getenv("GMAIL_PASSWORD")
-        self.servidor  = "smtp.gmail.com" # es la dirección del servidor de correo de Gmail
-        self.puerto    = 587 #  es el puerto que usa Gmail para enviar emails con cifrado TLS (el estándar seguro)
+        self.password = os.getenv("GMAIL_PASSWORD")
+        self.servidor = "smtp.gmail.com"
+        self.puerto = 587
 
     def enviar_email(self, destinatario: str, asunto: str, cuerpo: str):
-        # Construccion del email
-        mensaje = MIMEText(cuerpo, "plain")
-        mensaje["Subject"] = asunto
-        mensaje["From"]    = self.remitente
-        mensaje["To"]      = destinatario
+
+        if not self.remitente or not self.password:
+            self.logger.error("Credenciales de email no configuradas")
+            return
+
+        if not isinstance(destinatario, str) or "@" not in destinatario:
+            self.logger.error("Destinatario inválido")
+            return
 
         try:
+            mensaje = MIMEText(cuerpo, "plain")
+            mensaje["Subject"] = asunto
+            mensaje["From"] = self.remitente
+            mensaje["To"] = destinatario
+
             with smtplib.SMTP(self.servidor, self.puerto) as conexion:
                 conexion.starttls()
                 conexion.login(self.remitente, self.password)
-                conexion.sendmail(self.remitente, destinatario, mensaje.as_string())
+                conexion.sendmail(
+                    self.remitente,
+                    destinatario,
+                    mensaje.as_string()
+                )
+
                 self.logger.info(f"Email enviado a {destinatario}")
+
         except smtplib.SMTPAuthenticationError:
-            self.logger.error(f"Error: credenciales incorrectas. Revisa tu .env")
+            self.logger.error("Error: credenciales SMTP incorrectas")
         except smtplib.SMTPException as e:
-            self.logger.error(f"Error al enviar el email: {e}")
+            self.logger.error(f"Error SMTP: {e}")
 
     def notificar_cuota_vencida(self, destinatario: str, num_cuota: int, dias_retraso: int, recargo: float):
+
+        if num_cuota is None:
+            self.logger.error("num_cuota inválida en notificación")
+            return
 
         asunto = f"Aviso: Cuota {num_cuota} vencida"
 
         cuerpo = (
-        f"Estimado cliente,\n\n"
-        f"Le informamos que la cuota {num_cuota} de su préstamo "
-        f"ha sido pagada con {dias_retraso} días de retraso.\n"
-        f"Recargo aplicado: {recargo} €.\n\n"
-        f"Atentamente,\nSu banco."
+            f"Estimado cliente,\n\n"
+            f"La cuota {num_cuota} fue pagada con {dias_retraso} días de retraso.\n"
+            f"Recargo aplicado: {recargo} €.\n\n"
+            f"Atentamente,\nSu banco."
         )
-        
-        self.enviar_email(destinatario, asunto, cuerpo)     
 
-
+        self.enviar_email(destinatario, asunto, cuerpo)
