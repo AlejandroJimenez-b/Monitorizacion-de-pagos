@@ -46,6 +46,7 @@ class Prestamo:
 
         return calculo_cuotas
 
+
 # Comparacion de pagos reales
 
 class AnalizadorPagos:
