@@ -55,7 +55,7 @@ class Notificaciones:
             self.logger.error("num_cuota inválida en notificación")
             return
 
-        asunto = f"Aviso: Cuota {num_cuota} vencida"
+        asunto = self.logger.warning(f"Aviso: Cuota {num_cuota} vencida")
 
         cuerpo = (
             f"Estimado cliente,\n\n"

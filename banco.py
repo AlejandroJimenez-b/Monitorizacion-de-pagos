@@ -56,6 +56,11 @@ class Prestamo:
             else:
                 consecutivas_desplazadas = 0
 
+            self.logger.info(f"Cuota {cuota}: {fecha_actual}")
+            
+            if consecutivas_desplazadas >= 3:
+                self.logger.warning(f"Atención: {consecutivas_desplazadas} cuotas consecutivas fueron desplazadas.")
+
             calculo_cuotas.append({
                 "cuota": cuota,
                 "fecha_prevista": fecha_actual
@@ -105,6 +110,7 @@ class AnalizadorPagos:
                 continue
 
             if not pago.get("pagada") or self.importe_cuota == 0:
+
                 resultado["estado"] = "IMPAGADA"
 
             else:

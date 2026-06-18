@@ -71,12 +71,12 @@ if __name__ == "__main__":
 
     pagos_realizados = [
         {"fecha_pago": date(2026, 1, 15), "pagada": True},
-        {"fecha_pago": date(2026, 2, 2), "pagada": True},
+        # {"fecha_pago": date(2026, 2, 2), "pagada": True},
     ]
 
     main.ejecutar(
         fecha_inicio=date(2026, 1, 1),
-        num_cuotas=2,
+        num_cuotas=1,
         importe_cuota=500,
         cuota_requerida=500,
         pagos_realizados=pagos_realizados,
