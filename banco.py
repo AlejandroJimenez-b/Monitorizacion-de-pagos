@@ -111,6 +111,8 @@ class AnalizadorPagos:
 
             if not pago.get("pagada") or self.importe_cuota == 0:
 
+                self.logger.warning(f"Cuota {plan['cuota']}: IMPAGADA")
+
                 resultado["estado"] = "IMPAGADA"
 
             else:
@@ -127,6 +129,7 @@ class AnalizadorPagos:
                 )
 
                 if dias_retraso == 0:
+                    self.logger.info(f"Cuota {plan['cuota']}: pagada a tiempo")
                     resultado["estado"] = "PAGADA"
                     resultado["dias_de_retraso"] = 0
 
@@ -146,6 +149,8 @@ class AnalizadorPagos:
                         * (self.TARIFAS["interes_demora"] / 365),
                         2
                     )
+
+                    self.logger.warning(f"Cuota {plan['cuota']}: pagada con {dias_retraso} días de retraso. Recargo: {interes} €")
 
                     resultado["recargo"] = interes
 
