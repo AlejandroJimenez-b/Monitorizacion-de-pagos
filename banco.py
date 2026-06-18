@@ -138,6 +138,7 @@ class AnalizadorPagos:
                     resultado["dias_de_retraso"] = dias_retraso
 
                     if self.importe_cuota < self.cuota_requerida:
+                        self.logger.warning(f"Cuota {plan['cuota']}: INCOMPLETA. {self.cuota_requerida - self.importe_cuota} € POR ABONAR")
                         resultado["incompleta"] = True
                         resultado["faltante"] = (
                             self.cuota_requerida - self.importe_cuota
