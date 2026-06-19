@@ -69,6 +69,17 @@ if __name__ == "__main__":
 
     main = Main()
 
+    cuota_requerida = 500
+
+    # Cuotas a ejecutar
+    cuotas = [
+        {"nombre": "Agua", "importe": cuota_requerida},
+        {"nombre": "Luz", "importe": cuota_requerida},
+        {"nombre": "Netflix", "importe": cuota_requerida},
+        {"nombre": "Internet", "importe": cuota_requerida},
+        
+    ]
+    num_cuotas = len(cuotas)
     pagos_realizados = [
         {"fecha_pago": date(2026, 1, 15), "pagada": True},
         {"fecha_pago": date(2026, 2, 2), "pagada": True},
@@ -76,7 +87,7 @@ if __name__ == "__main__":
 
     main.ejecutar(
         fecha_inicio=date(2026, 1, 1),
-        num_cuotas=2,
+        num_cuotas = num_cuotas,
         importe_cuota=500,
         cuota_requerida=500,
         pagos_realizados=pagos_realizados,
