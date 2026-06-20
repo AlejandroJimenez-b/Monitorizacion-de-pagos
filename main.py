@@ -94,7 +94,7 @@ if __name__ == "__main__":
             "importe_pagado": 40
         },
         {
-            "fecha_pago": date(2026, 1, 15),
+            "fecha_pago": date(2026, 3, 15),
             "pagada": True,
             "importe_pagado": 10
         },

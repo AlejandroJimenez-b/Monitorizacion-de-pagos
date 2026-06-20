@@ -139,7 +139,7 @@ class AnalizadorPagos:
                 fecha_pago = pago.get("fecha_pago")
 
                 if not isinstance(fecha_pago, date):
-                    self.logger.error("fecha_pago inválida")
+                    self.logger.warning("fecha_pago inválida")
                     continue
 
                 dias_retraso = max(
@@ -147,7 +147,11 @@ class AnalizadorPagos:
                     (fecha_pago - plan["fecha_prevista"]).days
                 )
 
-                if dias_retraso == 0:
+                importe_requerido = plan.get("importe_requerido", 0)
+                faltante = max(0, importe_requerido - importe_pagado)
+                esta_incompleta = faltante > 0
+
+                if dias_retraso == 0 and not esta_incompleta:
 
                     self.logger.info(
                         f"Cuota {plan.get('nombre', plan['cuota'])}: pagada a tiempo"
@@ -158,15 +162,15 @@ class AnalizadorPagos:
 
                 else:
 
-                    resultado["estado"] = "PAGADA CON RETRASO"
+                    if dias_retraso > 0 and esta_incompleta:
+                        resultado["estado"] = "PAGADA CON RETRASO INCOMPLETA"
+                    elif dias_retraso > 0:
+                        resultado["estado"] = "PAGADA CON RETRASO"
+                    else:
+                        resultado["estado"] = "PAGADA INCOMPLETA"
                     resultado["dias_de_retraso"] = dias_retraso
 
-                    if importe_pagado < plan["importe_requerido"]:
-
-                        faltante = (
-                            plan["importe_requerido"] - importe_pagado
-                        )
-
+                    if esta_incompleta:
                         self.logger.warning(
                             f"Cuota {plan.get('nombre', plan['cuota'])}: "
                             f"INCOMPLETA. {faltante} € POR ABONAR"
@@ -175,20 +179,21 @@ class AnalizadorPagos:
                         resultado["incompleta"] = True
                         resultado["faltante"] = faltante
 
-                    interes = round(
-                        dias_retraso
-                        * importe_pagado
-                        * (self.TARIFAS["interes_demora"] / 365),
-                        2
-                    )
+                    if dias_retraso > 0:
+                        interes = round(
+                            dias_retraso
+                            * importe_pagado
+                            * (self.TARIFAS["interes_demora"] / 365),
+                            2
+                        )
 
-                    self.logger.warning(
-                        f"Cuota {plan.get('nombre', plan['cuota'])}: "
-                        f"pagada con {dias_retraso} días de retraso. "
-                        f"Recargo: {interes} €"
-                    )
+                        self.logger.warning(
+                            f"Cuota {plan.get('nombre', plan['cuota'])}: "
+                            f"pagada con {dias_retraso} días de retraso. "
+                            f"Recargo: {interes} €"
+                        )
 
-                    resultado["recargo"] = interes
+                        resultado["recargo"] = interes
 
             resultados_de_cuota.append(resultado)
 
