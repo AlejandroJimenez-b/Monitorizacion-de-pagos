@@ -82,12 +82,10 @@ class AnalizadorPagos:
         "interes_legal": 0.040625
     }
 
-    def __init__(self, cuotas_planificadas: list, pagos_realizados: list, importe_cuota: float, cuota_requerida: float):
+    def __init__(self, cuotas_planificadas: list, pagos_realizados: list):
 
         self.cuotas_planificadas = cuotas_planificadas or []
         self.pagos_realizados = pagos_realizados or []
-        self.importe_cuota = importe_cuota
-        self.cuota_requerida = cuota_requerida
 
     def analizar(self):
 
@@ -101,17 +99,38 @@ class AnalizadorPagos:
             self.logger.error("pagos_realizados inválidos")
             return []
 
-        for plan, pago in zip(self.cuotas_planificadas, self.pagos_realizados):
+        for i in range(len(self.cuotas_planificadas)):
 
-            resultado = {"cuota": plan.get("cuota")}
+            plan = self.cuotas_planificadas[i]
+
+            pago = (
+                self.pagos_realizados[i]
+                if i < len(self.pagos_realizados)
+                else None
+            )
+
+            resultado = {
+                "cuota": plan.get("cuota"),
+                "nombre": plan.get("nombre")
+            }
 
             if not isinstance(pago, dict):
-                self.logger.error("Pago inválido")
+                self.logger.warning(
+                    f"Cuota {plan.get('nombre', plan['cuota'])}: IMPAGADA"
+                )
+
+                resultado["estado"] = "IMPAGADA"
+
+                resultados_de_cuota.append(resultado)
                 continue
 
-            if not pago.get("pagada") or self.importe_cuota == 0:
+            importe_pagado = pago.get("importe_pagado", 0)
 
-                self.logger.warning(f"Cuota {plan['cuota']}: IMPAGADA")
+            if not pago.get("pagada") or importe_pagado == 0:
+
+                self.logger.warning(
+                    f"Cuota {plan.get('nombre', plan['cuota'])}: IMPAGADA"
+                )
 
                 resultado["estado"] = "IMPAGADA"
 
@@ -129,29 +148,45 @@ class AnalizadorPagos:
                 )
 
                 if dias_retraso == 0:
-                    self.logger.info(f"Cuota {plan['cuota']}: pagada a tiempo")
+
+                    self.logger.info(
+                        f"Cuota {plan.get('nombre', plan['cuota'])}: pagada a tiempo"
+                    )
+
                     resultado["estado"] = "PAGADA"
                     resultado["dias_de_retraso"] = 0
 
                 else:
+
                     resultado["estado"] = "PAGADA CON RETRASO"
                     resultado["dias_de_retraso"] = dias_retraso
 
-                    if self.importe_cuota < self.cuota_requerida:
-                        self.logger.warning(f"Cuota {plan['cuota']}: INCOMPLETA. {self.cuota_requerida - self.importe_cuota} € POR ABONAR")
-                        resultado["incompleta"] = True
-                        resultado["faltante"] = (
-                            self.cuota_requerida - self.importe_cuota
+                    if importe_pagado < plan["importe_requerido"]:
+
+                        faltante = (
+                            plan["importe_requerido"] - importe_pagado
                         )
+
+                        self.logger.warning(
+                            f"Cuota {plan.get('nombre', plan['cuota'])}: "
+                            f"INCOMPLETA. {faltante} € POR ABONAR"
+                        )
+
+                        resultado["incompleta"] = True
+                        resultado["faltante"] = faltante
 
                     interes = round(
                         dias_retraso
-                        * self.importe_cuota
+                        * importe_pagado
                         * (self.TARIFAS["interes_demora"] / 365),
                         2
                     )
 
-                    self.logger.warning(f"Cuota {plan['cuota']}: pagada con {dias_retraso} días de retraso. Recargo: {interes} €")
+                    self.logger.warning(
+                        f"Cuota {plan.get('nombre', plan['cuota'])}: "
+                        f"pagada con {dias_retraso} días de retraso. "
+                        f"Recargo: {interes} €"
+                    )
 
                     resultado["recargo"] = interes
 

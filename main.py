@@ -12,15 +12,15 @@ class Main:
     def __init__(self):
         self.notificaciones = Notificaciones()
 
-    def ejecutar(self, fecha_inicio, num_cuotas, importe_cuota, cuota_requerida, pagos_realizados, email_cliente):
+    def ejecutar(self, fecha_inicio, cuotas, pagos_realizados, email_cliente):
 
         # Validaciones básicas de entrada
         if not isinstance(fecha_inicio, date):
             self.logger.error("fecha_inicio debe ser datetime.date")
             return
 
-        if not isinstance(num_cuotas, int) or num_cuotas <= 0:
-            self.logger.error("num_cuotas debe ser un entero > 0")
+        if not isinstance(cuotas, list) or len(cuotas) == 0:
+            self.logger.error("cuotas debe ser una lista no vacía")
             return
 
         if not isinstance(pagos_realizados, list):
@@ -32,19 +32,22 @@ class Main:
             return
 
         # 1. Crear préstamo
-        prestamo = Prestamo(fecha_inicio, num_cuotas)
+        prestamo = Prestamo(
+            fecha_inicio,
+            len(cuotas)
+        )
+
         cuotas_planificadas = prestamo.calcular_cuotas()
 
-        if not cuotas_planificadas:
-            self.logger.error("No se pudieron generar cuotas")
-            return
+        for plan, cuota in zip(cuotas_planificadas, cuotas):
+
+            plan["nombre"] = cuota["nombre"]
+            plan["importe_requerido"] = cuota["importe"]
 
         # 2. Analizar pagos
         analizador = AnalizadorPagos(
             cuotas_planificadas,
-            pagos_realizados,
-            importe_cuota,
-            cuota_requerida
+            pagos_realizados
         )
 
         resultados = analizador.analizar()
@@ -59,7 +62,7 @@ class Main:
 
                 self.notificaciones.notificar_cuota_vencida(
                     email_cliente,
-                    resultado.get("cuota"),
+                    resultado.get("nombre"),
                     resultado.get("dias_de_retraso", 0),
                     resultado.get("recargo", 0)
                 )
@@ -69,27 +72,42 @@ if __name__ == "__main__":
 
     main = Main()
 
-    cuota_requerida = 500
 
     # Cuotas a ejecutar
     cuotas = [
-        {"nombre": "Agua", "importe": cuota_requerida},
-        {"nombre": "Luz", "importe": cuota_requerida},
-        {"nombre": "Netflix", "importe": cuota_requerida},
-        {"nombre": "Internet", "importe": cuota_requerida},
+        {"nombre": "Agua", "importe": 30},
+        {"nombre": "Luz", "importe": 40},
+        {"nombre": "Netflix", "importe": 12},
+        {"nombre": "Internet", "importe": 20},
         
     ]
-    num_cuotas = len(cuotas)
+
     pagos_realizados = [
-        {"fecha_pago": date(2026, 1, 15), "pagada": True},
-        {"fecha_pago": date(2026, 2, 2), "pagada": True},
+        {
+            "fecha_pago": date(2026, 1, 15),
+            "pagada": True,
+            "importe_pagado": 30
+        },
+        {
+            "fecha_pago": date(2026, 2, 2),
+            "pagada": True,
+            "importe_pagado": 40
+        },
+        {
+            "fecha_pago": date(2026, 1, 15),
+            "pagada": True,
+            "importe_pagado": 10
+        },
+        {
+            "fecha_pago": date(2026, 2, 2),
+            "pagada": True,
+            "importe_pagado": 20
+        },
     ]
 
     main.ejecutar(
         fecha_inicio=date(2026, 1, 1),
-        num_cuotas = num_cuotas,
-        importe_cuota=500,
-        cuota_requerida=500,
+        cuotas=cuotas,
         pagos_realizados=pagos_realizados,
         email_cliente="alextresel22@gmail.com"
     )
